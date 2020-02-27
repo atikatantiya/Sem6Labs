@@ -1,0 +1,9 @@
+4 regular evaluations.
+1 mid term assessment.
+
+4th lab - first eval - write and execute a code plus obs - 10 marks (l1 to l3)
+7th lab - second eval - no writeup. only obs checking and program o/p seeing - 10 marks (l5 to l7)
+10th lab- third eval - no writeup. only obs checking and program o/p seeing - 10 marks (l8 to l10)
+12th lab- fourth eval - write and execute a code plus obs - 10 marks (l7 to l10)
+
+8th lab midterm assessment - 20 marks (l1 to l6)
