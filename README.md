@@ -1,2 +1,2 @@
 # Sem6Labs
-Compiler Design Lab // Parralel Computer Architecture and Programming Lab
+Compiler Design Lab // Parallel Computer Architecture and Programming Lab
