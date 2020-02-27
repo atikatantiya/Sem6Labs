@@ -1,0 +1,10 @@
+main ()
+{
+	int x, e[4], r, i;
+	yx = 2;
+	x = a * 2 / w + f + 3 + b;
+	var = var + 4 + e;
+	for(i = 1; i<3; i = i+1) {
+		var = var + 3;
+	}
+}
