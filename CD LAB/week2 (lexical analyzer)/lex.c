@@ -398,7 +398,7 @@ token getNextToken () {
 								case '|':	ca = getc(fd);
 											col++;
 											var.type = 9;
-											if(ca == '!') {
+											if(ca == '|') {
 												var.type = 6;
 												var.lex[j++] = ca;
 											}						
