@@ -234,7 +234,7 @@ void simpleExpr() {
 void eprime() {
 	lookahead = getNextToken();
 	printf("eprime with %s\n",lookahead.lex);
-	if(strcmp(lookahead.lex,"=") == 0 || strcmp(lookahead.lex,"!") == 0 || strcmp(lookahead.lex,">") == 0 || strcmp(lookahead.lex,"<") == 0) {
+	if(lookahead.lex[0] == '=' || lookahead.lex[0] == '!' || lookahead.lex[0] == '>' || lookahead.lex[0] == '<') {
 		retract();
 		relop();
 		simpleExpr();
