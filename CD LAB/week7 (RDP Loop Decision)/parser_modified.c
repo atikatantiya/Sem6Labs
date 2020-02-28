@@ -314,6 +314,8 @@ void loopStat() {
 			else
 				error();
 		}
+		else
+			error();
 	}
 	else if(strcmp(lookahead.lex,"for") == 0) {
 		lookahead = getNextToken();
