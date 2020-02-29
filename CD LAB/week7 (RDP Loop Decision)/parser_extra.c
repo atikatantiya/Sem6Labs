@@ -20,9 +20,16 @@
 // addop -> + | -
 // mulop -> * | / | %
 
-//decision_stat -> if (expr) { statement-list } dprime
-//dprime -> else { statement-list } | (epsilon)
-//loop_stat -> while (expr) { statement-list } | for (assign_stat; expr; assign_stat) { statement-list } 
+//compound-expr -> expr compound-expr' | ! (expr) compound-expr'
+//compound-expr' -> logical-op compound-expr'' | (epsilon)
+//compound-expr'' -> expr compound-expr' | ! (expr) compound-expr'
+//logical-op -> && | ||
+//decision-stat -> if (compound-expr) { statement-list } dprime
+//dprime -> else dprime1 | (epsilon) 
+//dprime1 -> { statement-list } | if (compound-expr) { statement-list } dprime3 
+//dprime3 -> else dprime2 | (epsilon)
+//dprime2 -> if (compound-expr) { statement-list } dprime3 | { statement-list }
+//loop_stat -> while (compound-expr) { statement-list } | for (assign_stat; compound-expr; assign_stat) { statement-list } 
 
 token lookahead;
 
@@ -38,6 +45,10 @@ void assignStat(); 		//done
 void decisionStat();	//done
 void loopStat();		//done
 void dprime();			//done
+void dprime1();			//done
+void dprime2();			//done
+void dprime3();			//done
+void dprime4();
 void expr(); 			//done
 void eprime(); 			//done
 void simpleExpr(); 		//done
@@ -48,6 +59,10 @@ void factor(); 			//done
 void addop(); 			//done
 void mulop(); 			//done
 void relop(); 			//done
+void compoundExpr();
+void compoundExprPrime();
+void compoundExprPrime2();
+void logicalop();
 
 void retract() {
 	int len = (-1) * strlen(lookahead.lex);
@@ -70,21 +85,21 @@ void error () {
 
 // Program -> main() { declarations statement-list }
 void program() {
-	//printf("Program with %s\n",lookahead.lex);
+	printf("Program with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"main") == 0) {
 		lookahead = getNextToken();
-		//printf("Program with %s\n",lookahead.lex);
+		printf("Program with %s\n",lookahead.lex);
 		if(strcmp(lookahead.lex,"(") == 0) {
 			lookahead = getNextToken();
-			//printf("Program with %s\n",lookahead.lex);
+			printf("Program with %s\n",lookahead.lex);
 			if(strcmp(lookahead.lex,")") == 0) {
 				lookahead = getNextToken();
-				//printf("Program with %s\n",lookahead.lex);
+				printf("Program with %s\n",lookahead.lex);
 				if(strcmp(lookahead.lex,"{") == 0) {
 					declarations();
 					statementList();
 					lookahead = getNextToken();
-					//printf("Program with %s\n",lookahead.lex);
+					printf("Program with %s\n",lookahead.lex);
 					if(strcmp(lookahead.lex,"}") == 0) {
 						return;
 					}
@@ -107,13 +122,13 @@ void program() {
 // declarations -> data-type identifier-list; declarations | (epsilon)
 void declarations() {
 	lookahead = getNextToken();
-	//printf("Declarations with %s\n",lookahead.lex);
+	printf("Declarations with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"int") == 0 || strcmp(lookahead.lex,"char") == 0) {
 		retract();
 		datatype();
 		identifierList();
 		lookahead = getNextToken();
-		//printf("Declarations with %s\n",lookahead.lex);
+		printf("Declarations with %s\n",lookahead.lex);
 		if(strcmp(lookahead.lex,";") == 0) {
 			declarations();
 		}
@@ -127,7 +142,7 @@ void declarations() {
 // data-type -> int | char
 void datatype() {
 	lookahead = getNextToken();
-	//printf("Datatype with %s\n",lookahead.lex);
+	printf("Datatype with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"int") == 0 || strcmp(lookahead.lex,"char") == 0)
 		return;
 	else
@@ -137,7 +152,7 @@ void datatype() {
 // statement-list -> statement statement-list | (epsilon)
 void statementList() {
 	lookahead = getNextToken();
-	//printf("StatementList with %s\n",lookahead.lex);
+	printf("StatementList with %s\n",lookahead.lex);
 	if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0 || strcmp(lookahead.lex,"if") == 0 || strcmp(lookahead.lex,"while") == 0 || strcmp(lookahead.lex,"for") == 0) {
 		retract();
 		statement();
@@ -150,7 +165,7 @@ void statementList() {
 // identifier-list -> id identifier-list'
 void identifierList() {
 	lookahead = getNextToken();
-	//printf("IdentifierList with %s\n",lookahead.lex);
+	printf("IdentifierList with %s\n",lookahead.lex);
 	if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0) {
 		idListPrime();
 	}
@@ -161,16 +176,16 @@ void identifierList() {
 // identifier-list' -> , identifier-list | [number] identifier-list'' | (epsilon)
 void idListPrime() {
 	lookahead = getNextToken();
-	//printf("idListPrime with %s\n",lookahead.lex);
+	printf("idListPrime with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,",") == 0) {
 		identifierList();
 	}
 	else if (strcmp(lookahead.lex,"[") == 0) {
 		lookahead = getNextToken();
-		//printf("idListPrime with %s\n",lookahead.lex);
+		printf("idListPrime with %s\n",lookahead.lex);
 		if (strcmp(strType[lookahead.type],"NUMBER") == 0) {
 			lookahead = getNextToken();
-			//printf("idListPrime with %s\n",lookahead.lex);
+			printf("idListPrime with %s\n",lookahead.lex);
 			if (strcmp(lookahead.lex,"]") == 0) {
 				idListPrime2();
 			}
@@ -187,7 +202,7 @@ void idListPrime() {
 // identifier-list'' -> (epsilon) | , identifier-list
 void idListPrime2() {
 	lookahead = getNextToken();
-	//printf("idListPrime2 with %s\n",lookahead.lex);
+	printf("idListPrime2 with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,",") == 0) {
 		identifierList();
 	}
@@ -198,10 +213,12 @@ void idListPrime2() {
 // statement -> assign_stat; | decision_stat | loop_stat
 void statement() {
 	lookahead = getNextToken();
+	printf("statement with %s\n",lookahead.lex);
 	if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0) {
 		retract();
 		assignStat();
 		lookahead = getNextToken();
+		printf("statement with %s\n",lookahead.lex);
 		if(strcmp(lookahead.lex,";") == 0) {
 			return;
 		}
@@ -223,7 +240,7 @@ void statement() {
 // assign_stat -> id = expr
 void assignStat() {
 	lookahead = getNextToken();
-	//printf("assignStat with %s\n",lookahead.lex);
+	printf("assignStat with %s\n",lookahead.lex);
 	if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0) {
 		lookahead = getNextToken();
 		//printf("assignStat with %s\n",lookahead.lex);
@@ -237,19 +254,96 @@ void assignStat() {
 		error();
 }
 
-//decision_stat -> if (expr) { statement-list } dprime
-void decisionStat() {
+//compound-expr -> expr compound-expr' | ! (expr) compound-expr'
+void compoundExpr() {
 	lookahead = getNextToken();
-	if(strcmp(lookahead.lex,"if") == 0) {
+	printf("compoundexpr  with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"!") == 0) {
 		lookahead = getNextToken();
+		printf("compoundexpr  with %s\n",lookahead.lex);
 		if(strcmp(lookahead.lex,"(") == 0) {
 			expr();
 			lookahead = getNextToken();
+			printf("compoundexpr with %s\n",lookahead.lex);
+			if(strcmp(lookahead.lex,")") == 0) {
+				compoundExprPrime();
+			}
+			else
+				error();			
+		}
+		else
+			error();		
+	}
+	else if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0 || strcmp(strType[lookahead.type],"NUMBER") == 0) {
+		retract();
+		expr();
+		compoundExprPrime();
+	}
+	else
+		error();
+}
+
+//compound-expr' -> logical-op compound-expr'' | (epsilon)
+void compoundExprPrime() {
+	lookahead = getNextToken();
+	printf("compoundexpr prime with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"&&") == 0 || strcmp(lookahead.lex,"||") == 0) {
+		retract();
+		logicalop();
+		compoundExprPrime2();
+	}
+	else
+		retract();
+}
+
+
+//compound-expr'' -> expr compound-expr' | ! (expr) compound-expr'
+void compoundExprPrime2() {
+	lookahead = getNextToken();
+	printf("compoundexpr prime2 with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"!") == 0) {
+		lookahead = getNextToken();
+		printf("compoundexpr prime2 with %s\n",lookahead.lex);
+		if(strcmp(lookahead.lex,"(") == 0) {
+			expr();
+			lookahead = getNextToken();
+			printf("compoundexpr prime2 with %s\n",lookahead.lex);
+			if(strcmp(lookahead.lex,")") == 0) {
+				compoundExprPrime();
+			}
+			else
+				error();			
+		}
+		else
+			error();		
+	}
+	else if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0 || strcmp(strType[lookahead.type],"NUMBER") == 0) {
+		retract();
+		expr();
+		compoundExprPrime();
+	}
+	else
+		error();
+}
+
+//decision-stat -> if (compound-expr) { statement-list } dprime
+void decisionStat() {
+	lookahead = getNextToken();
+	printf("decision stat with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"if") == 0) {
+		lookahead = getNextToken();
+		printf("decision stat with %s\n",lookahead.lex);
+		if(strcmp(lookahead.lex,"(") == 0) {
+			compoundExpr();
+			lookahead = getNextToken();
+			printf("decision stat with %s\n",lookahead.lex);
 			if(strcmp(lookahead.lex,")") == 0) {
 				lookahead = getNextToken();
+				printf("decision stat with %s\n",lookahead.lex);
 				if(strcmp(lookahead.lex,"{") == 0) {
 					statementList();
 					lookahead = getNextToken();
+					printf("decision stat with %s\n",lookahead.lex);
 					if(strcmp(lookahead.lex,"}") == 0) {
 						dprime();
 					}
@@ -269,16 +363,53 @@ void decisionStat() {
 		error();
 }
 
-//dprime -> else { statement-list } | (epsilon)
+//dprime -> else dprime1 | (epsilon) 
 void dprime() {
 	lookahead = getNextToken();
+	printf("dprime with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"else") == 0) {
+		dprime1();
+	}
+	else
+		retract();
+}
+
+//dprime1 -> { statement-list } | if (compound-expr) { statement-list } dprime3 
+void dprime1() {
+	lookahead = getNextToken();
+	printf("dprime1 with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"{") == 0) {
+		statementList();
 		lookahead = getNextToken();
-		if(strcmp(lookahead.lex,"{") == 0) {
-			statementList();
+		printf("dprime1 with %s\n",lookahead.lex);
+		if(strcmp(lookahead.lex,"}") == 0) {
+			return;
+		}
+		else
+			error();
+	}
+	else if(strcmp(lookahead.lex,"if") == 0) {
+		lookahead = getNextToken();
+		printf("dprime1 with %s\n",lookahead.lex);
+		if(strcmp(lookahead.lex,"(") == 0) {
+			compoundExpr();
 			lookahead = getNextToken();
-			if(strcmp(lookahead.lex,"}") == 0) {
-				return;
+			printf("dprime1 with %s\n",lookahead.lex);
+			if(strcmp(lookahead.lex,")") == 0) {
+				lookahead = getNextToken();
+				printf("dprime1 with %s\n",lookahead.lex);
+				if(strcmp(lookahead.lex,"{") == 0) {
+					statementList();
+					lookahead = getNextToken();
+					printf("dprime1 with %s\n",lookahead.lex);
+					if(strcmp(lookahead.lex,"}") == 0) {
+						dprime3();
+					}
+					else
+						error();
+				}
+				else
+					error();
 			}
 			else
 				error();
@@ -287,22 +418,83 @@ void dprime() {
 			error();
 	}
 	else
-		retract();
+		error();
 }
 
-//loop_stat -> while (expr) { statement-list } | for (assign_stat; expr; assign_stat) { statement-list } 
-void loopStat() {
+//dprime2 -> if (compound-expr) { statement-list } dprime3 | { statement-list }
+void dprime2() {
 	lookahead = getNextToken();
-	if(strcmp(lookahead.lex,"while") == 0) {
+	if(strcmp(lookahead.lex,"if") == 0) {
 		lookahead = getNextToken();
+		printf("dprime3 with %s\n",lookahead.lex);
 		if(strcmp(lookahead.lex,"(") == 0) {
-			expr();
+			compoundExpr();
 			lookahead = getNextToken();
+			printf("dprime3 with %s\n",lookahead.lex);
 			if(strcmp(lookahead.lex,")") == 0) {
 				lookahead = getNextToken();
+				printf("dprime3 with %s\n",lookahead.lex);
 				if(strcmp(lookahead.lex,"{") == 0) {
 					statementList();
 					lookahead = getNextToken();
+					printf("dprime3 with %s\n",lookahead.lex);
+					if(strcmp(lookahead.lex,"}") == 0) {
+						dprime3();
+					}
+					else
+						error();
+				}
+				else
+					error();
+			}
+			else
+				error();
+		}
+		else
+			error();
+	}
+	else if(strcmp(lookahead.lex,"{") == 0) {
+		statementList();
+		lookahead = getNextToken();
+		if(strcmp(lookahead.lex,"}") == 0) {
+			return;
+		}
+		else
+			error();
+	}
+	else
+		error();
+}
+
+//dprime3 -> else dprime2 | (epsilon)
+void dprime3() {
+	lookahead = getNextToken();
+	printf("dprime3 with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"else") == 0) {
+		dprime2();
+	}
+	else
+		retract();
+}
+
+//loop_stat -> while (compound-expr) { statement-list } | for (assign_stat; compound-expr; assign_stat) { statement-list } 
+void loopStat() {
+	lookahead = getNextToken();
+	printf("loopstat with %s\n",lookahead.lex);
+	if(strcmp(lookahead.lex,"while") == 0) {
+		lookahead = getNextToken();
+		printf("loopstat with %s\n",lookahead.lex);
+		if(strcmp(lookahead.lex,"(") == 0) {
+			compoundExpr();
+			lookahead = getNextToken();
+			printf("loopstat with %s\n",lookahead.lex);
+			if(strcmp(lookahead.lex,")") == 0) {
+				lookahead = getNextToken();
+				printf("loopstat with %s\n",lookahead.lex);
+				if(strcmp(lookahead.lex,"{") == 0) {
+					statementList();
+					lookahead = getNextToken();
+					printf("loopstat with %s\n",lookahead.lex);
 					if(strcmp(lookahead.lex,"}") == 0) {
 						return;
 					}
@@ -320,20 +512,26 @@ void loopStat() {
 	}
 	else if(strcmp(lookahead.lex,"for") == 0) {
 		lookahead = getNextToken();
+		printf("loopstat with %s\n",lookahead.lex);
 		if(strcmp(lookahead.lex,"(") == 0) {
 			assignStat();
 			lookahead = getNextToken();
+			printf("loopstat with %s\n",lookahead.lex);
 			if(strcmp(lookahead.lex,";") == 0) {
-				expr();
+				compoundExpr();
 				lookahead = getNextToken();
+				printf("loopstat with %s\n",lookahead.lex);
 				if(strcmp(lookahead.lex,";") == 0) {
 					assignStat();
 					lookahead = getNextToken();
+					printf("loopstat with %s\n",lookahead.lex);
 					if(strcmp(lookahead.lex,")") == 0) {
 						lookahead = getNextToken();
+						printf("loopstat with %s\n",lookahead.lex);
 						if(strcmp(lookahead.lex,"{") == 0) {
 							statementList();
 							lookahead = getNextToken();
+							printf("loopstat with %s\n",lookahead.lex);
 							if(strcmp(lookahead.lex,"}") == 0) {
 								return;
 							}
@@ -361,14 +559,14 @@ void loopStat() {
 
 // expr -> simple_expr eprime
 void expr() {
-	//printf("expr with %s\n",lookahead.lex);
+	printf("expr with %s\n",lookahead.lex);
 	simpleExpr();
 	eprime();
 }
 
 // simple_expr -> term seprime
 void simpleExpr() {
-	//printf("simpleExpr with %s\n",lookahead.lex);
+	printf("simpleExpr with %s\n",lookahead.lex);
 	term();
 	seprime();
 }
@@ -376,7 +574,7 @@ void simpleExpr() {
 // eprime -> relop simple_expr | (epsilon)
 void eprime() {
 	lookahead = getNextToken();
-	//printf("eprime with %s\n",lookahead.lex);
+	printf("eprime with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"<") == 0 || strcmp(lookahead.lex,"<=") == 0 || strcmp(lookahead.lex,">") == 0 || strcmp(lookahead.lex,">=") == 0 || strcmp(lookahead.lex,"==") == 0 || strcmp(lookahead.lex,"!=") == 0)  {
 		retract();
 		relop();
@@ -388,7 +586,7 @@ void eprime() {
 
 // term -> factor tprime
 void term() {
-	//printf("term with %s\n",lookahead.lex);
+	printf("term with %s\n",lookahead.lex);
 	factor();
 	tprime();
 }
@@ -396,7 +594,7 @@ void term() {
 // seprime -> addop term seprime | (epsilon)
 void seprime() {
 	lookahead = getNextToken();
-	//printf("seprime with %s\n",lookahead.lex);
+	printf("seprime with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"+") == 0 || strcmp(lookahead.lex,"-") == 0) {
 		retract();
 		addop();
@@ -410,7 +608,7 @@ void seprime() {
 // relop -> == | != | <= | >= | > | <
 void relop() {
 	lookahead = getNextToken();
-	//printf("relop with %s\n",lookahead.lex);
+	printf("relop with %s\n",lookahead.lex);
 	if(strcmp(strType[lookahead.type],"RELATIONAL_OPERATOR") == 0)
 		return;
 	else
@@ -421,7 +619,7 @@ void relop() {
 // factor -> id | num
 void factor() {
 	lookahead = getNextToken();
-	//printf("factor with %s\n",lookahead.lex);
+	printf("factor with %s\n",lookahead.lex);
 	if(strcmp(strType[lookahead.type],"IDENTIFIER") == 0 || strcmp(strType[lookahead.type],"NUMBER") == 0)
 		return;
 	else
@@ -431,7 +629,7 @@ void factor() {
 // tprime -> mulop factor tprime | (epsilon)
 void tprime() {
 	lookahead = getNextToken();
-	//printf("tprime with %s\n",lookahead.lex);
+	printf("tprime with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"*") == 0 || strcmp(lookahead.lex,"/") == 0 || strcmp(lookahead.lex,"%") == 0) {
 		retract();
 		mulop();
@@ -445,7 +643,7 @@ void tprime() {
 // addop -> + | -
 void addop() {
 	lookahead = getNextToken();
-	//printf("addop with %s\n",lookahead.lex);
+	printf("addop with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"+") == 0 || strcmp(lookahead.lex,"-") == 0) {
 		return;
 	}
@@ -456,8 +654,18 @@ void addop() {
 // mulop -> * | / | %
 void mulop() {
 	lookahead = getNextToken();
-	//printf("mulop with %s\n",lookahead.lex);
+	printf("mulop with %s\n",lookahead.lex);
 	if(strcmp(lookahead.lex,"*") == 0 || strcmp(lookahead.lex,"/") == 0 || strcmp(lookahead.lex,"%") == 0) {
+		return;
+	}
+	else
+		error();
+}
+
+//logical-op -> && | ||
+void logicalop() {
+	lookahead = getNextToken();
+	if(strcmp(lookahead.lex,"&&") == 0 || strcmp(lookahead.lex,"||") == 0) {
 		return;
 	}
 	else
@@ -470,3 +678,12 @@ int main() {
 	program();
 	success();
 }
+
+/*
+Limitations :
+- all declarations have to be done at the very beginning of the program
+- switch case not implemented
+- inside a compound-expr whenever ! is used, gotta use it like !(expr), as in will not work if expression is not inside brackets
+- shorthand assignment statements not implemented
+- increment / decrement operators not implemented
+*/
