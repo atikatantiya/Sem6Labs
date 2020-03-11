@@ -5,7 +5,7 @@
 #include <math.h>
 
 __global__ void func(int *a,int *b,int *t,int rows,int cols) {
-	int id = threadIdx.y;
+	int id = threadIdx.x;
 	for(int i = 0; i < rows; i++) {
 		t[id] =  a[id] + b[id];
 		id = id + cols;
@@ -47,9 +47,7 @@ int main() {
 	cudaMemcpy(d_a,a,size,cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b,b,size,cudaMemcpyHostToDevice);
 
-	dim3 dimGrid(1,1,1);
-	dim3 dimBlock(1,n,1);
-	func<<<dimGrid,dimBlock>>>(d_a,d_b,d_t,m,n);
+	func<<<1,n>>>(d_a,d_b,d_t,m,n);
 
 	cudaMemcpy(t,d_t,size,cudaMemcpyDeviceToHost);
 	printf("Result matrix is: \n");
